@@ -21,4 +21,5 @@ The dataset used in this project was called District_Overview, which contained a
 Before the analysis, there was a good amount of data inspection done to identify relevant variables and assess their data types. Additionally, the original data set, named as district in RStudio, required a decent amount of cleaning before we could begin to assess the data. For example, the original data set listed each district’s overall star rating as a string (e.g., 2 Stars) rather than just an integer. To fix this, we needed to separate the value to return only the number of stars, then convert it to a numerical value so that we could find patterns or data summaries. 
 
 #Code Used to Clean the Data
+
 district = district %>% separate('Overall Star Rating', c('Overall Stars', NA), sep=" ") %>% mutate(`Overall Stars` = as.numeric(`Overall Stars`) 
