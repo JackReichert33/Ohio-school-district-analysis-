@@ -1,0 +1,237 @@
+library(dplyr) 
+
+library(ggplot2) 
+
+library(tidyverse) 
+
+  
+
+district = read_csv('DistrictReport.csv') 
+
+  
+
+# Converting percentage columns to be numeric 
+
+district = district %>% mutate(`College Career Workforce and Military Readiness Percent` = as.numeric(`College Career Workforce and Military Readiness Percent`), `Graduation Rate Component Percentage` = as.numeric(`Graduation Rate Component Percentage`), `Gap Closing Component Percent` = as.numeric(`Gap Closing Component Percent`), `Early Literacy Component Percent` = as.numeric(`Early Literacy Component Percent`), `Four Year Graduation Rate 2025` = as.numeric(`Four Year Graduation Rate 2025`), `Five Year Graduation Rate 2024` = as.numeric(`Five Year Graduation Rate 2024`)) 
+
+str(district) 
+
+  
+
+# Converting star columns into just the number of stars 
+
+district = district %>% separate('Overall Star Rating', c('Overall Stars', NA), sep=" ") %>% 
+
+  separate('Region', c(NA, 'Region', NA, NA, NA)) %>% 
+
+  separate('Gap Closing Component Star Rating', c('Gap Closing Stars', NA), sep=" ") %>% 
+
+  separate('Early Literacy Component Star Rating', c('Early Literacy Stars', NA), sep=" ") %>% 
+
+  separate('Achievement Component Star Rating', c('Achievement Stars', NA), sep=" ") %>% 
+
+  separate('Progress Component Star Rating', c('Progress Stars', NA), sep=" ") %>% 
+
+  separate('Graduation Rate Component Star Rating', c('Graduation Stars', NA), sep=" ") %>% 
+
+  separate('College Career Workforce and Military Readiness Component Star Rating', c('Readiness Stars', NA), sep=" ") 
+
+  
+
+# Converting star columns to numeric values 
+
+district = district %>% mutate(`Overall Stars` = as.numeric(`Overall Stars`), `Achievement Stars` = as.numeric(`Achievement Stars`), `Early Literacy Stars` = as.numeric(`Early Literacy Stars`), `Progress Stars` = as.numeric(`Progress Stars`), `Gap Closing Stars` = as.numeric(`Gap Closing Stars`), `Graduation Stars` = as.numeric(`Graduation Stars`)) 
+
+  
+
+# Re-ordering region to have a leading zero for graphs 
+
+singleregion = str_length(district$Region) == 1 
+
+district$Region[singleregion] = paste0('0', district$Region[singleregion]) 
+
+  
+
+#Major urban regions: Columbus, Cleveland, Cincinatti 
+
+urbanschools <- subset( 
+
+  district, 
+
+  Region %in% c('03', '11', '13') 
+
+) 
+
+  
+
+#Rural regions outside of Columbus, Cincinnati, Cleveland 
+
+ruralschools <- subset( 
+
+  district, 
+
+  !(Region) %in% c('03', '11', '13') 
+
+) 
+
+  
+
+district = district %>% mutate(`Urban` = ifelse(Region %in% c('03', '11', '13'), TRUE, FALSE)) 
+
+  
+
+str(district) 
+
+  
+
+regionavg = district %>% group_by(Region) %>% summarize(AvgStars = mean(`Overall Stars`)) %>% arrange(Region) 
+
+  
+
+print(regionavg) 
+
+  
+
+ggplot(data=district, mapping=aes(x=`Overall Stars`)) + 
+
+  geom_bar(mapping=aes(color=Urban)) + 
+
+  labs( 
+
+    title = 'Overall Star Rating by State Support Region' 
+
+  ) 
+
+  
+
+ggplot(data=district, mapping=aes(x=`Overall Stars`)) + 
+
+  geom_bar() 
+
+#Display each region and the number of districts within each region 
+
+  
+
+overallregion = district %>% group_by(Region) %>% mutate(`Overall Stars` = as.character(`Overall Stars`)) 
+
+  
+
+#Overall Star Rating Comparison  
+
+  
+
+print(urbanschools) 
+
+  
+
+# Region and Overall Stars 
+
+ggplot(data=overallregion) + 
+
+  geom_bar(mapping=aes(x=Region, fill=`Overall Stars`)) 
+
+  
+
+# Urban and Overall Stars 
+
+ggplot(data=urbanschools) + 
+
+  geom_boxplot(mapping=aes(x=Region, y=`Overall Stars`)) 
+
+  
+
+# Rural and Overall Stars 
+
+ggplot(data=ruralschools) + 
+
+  geom_boxplot(mapping=aes(x=Region, y=`Overall Stars`)) 
+
+  
+
+# Comparison of Overall Stars between Urban and Rural 
+
+ggplot(data=district) + 
+
+  geom_boxplot(mapping=aes(x=Urban, y=`Overall Stars`)) 
+
+  
+
+median(urbanschools$`Overall Stars`) 
+
+mean(ruralschools$`Overall Stars`) 
+
+  
+
+# Overall Stars based on Urban (regions 3, 11 and 13) 
+
+ggplot(data=district) + 
+
+  geom_bar(mapping=aes(x=`Overall Stars`, fill=Urban)) 
+
+  
+
+# Summary statistics for Urban vs. Rural schools 
+
+urbansum = summary(urbanschools$`Overall Stars`) 
+
+ruralsum = summary(ruralschools$`Overall Stars`) 
+
+comparison = cbind(Urban = urbansum, Rural = ruralsum) 
+
+print(comparison) 
+
+  
+
+#Graduation rate effect on overall star rating while considering district enrollment 
+
+ggplot(data=district) + 
+
+  geom_point(mapping=aes(x=`Overall Stars`, y=`Graduation Rate Component Percentage`, size=`Enrollment 2025-2026`)) 
+
+  
+
+#Urban average performance comparison 
+
+ggplot(data=district) + 
+
+  geom_boxplot(mapping=aes(x=`Region`, y=`Performance Index Percent`, fill=Urban)) 
+
+  
+
+ggplot(data = district) + 
+
+  stat_summary( 
+
+    fun = mean, 
+
+    mapping=aes(x=Region, y=`Performance Index Percent`), 
+
+    fun.min=min, 
+
+    fun.max=max, 
+
+    na.rm=TRUE 
+
+  ) 
+
+  
+
+# Percentage summaries by region 
+
+regionmetrics = district %>% group_by(Region) %>% summarize(AvgGrad = mean(`Graduation Rate Component Percentage`, na.rm=TRUE), AvgPerf = mean(`Performance Index Percent`, na.rm=TRUE), AvgGapClose = mean(`Gap Closing Component Percent`, na.rm=TRUE), AvgEarlyLit = mean(`Early Literacy Component Percent`, na.rm=TRUE), AvgReadiness = mean(`College Career Workforce and Military Readiness Percent`, na.rm=TRUE)) 
+
+longregion = regionmetrics %>% pivot_longer(cols=c(AvgGrad, AvgPerf, AvgGapClose, AvgEarlyLit, AvgReadiness), names_to='Variable', values_to='Percent') 
+
+  
+
+ggplot(data=longregion, aes(x=Region, y=Percent, group = Variable, color = Variable)) + 
+
+  geom_point(size=2) + 
+
+  geom_line() + 
+
+  labs( 
+
+    title='Average Metric Percentages by Region' 
+
+  ) 
