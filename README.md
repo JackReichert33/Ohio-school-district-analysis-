@@ -2,6 +2,7 @@
 Exploratory data analysis of Ohio school district report card ratings and enrollment using R.
 
 Research Questions: 
+
 What is the distribution of overall rating scores?​
 The purpose was to find a benchmark for the overall ratings given to all the districts.  ​
 
